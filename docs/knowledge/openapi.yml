@@ -1,0 +1,1381 @@
+openapi: 3.0.3
+
+info:
+  title: Kubo Bank API
+  description: >
+    Core banking API for Kubo Bank MVP.
+    Covers identity, account, transaction, fx, ledger, and shared bounded contexts.
+    Built on Clean Architecture + DDD + CQRS.
+    Accounts are multi-currency. Cross-currency transactions supported via external FX provider.
+    Authentication via Auth0 (Authorization Code + PKCE). All endpoints require a valid JWT Bearer token.
+    Every completed transaction generates a double-entry journal entry automatically.
+    Roles: ROLE_CUSTOMER (end user), ROLE_OPERATOR (teller), ROLE_FINANCE (bookkeeper), ROLE_ADMIN (system owner).
+  version: 0.5.0
+  contact:
+    name: Kubo Bank Team
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Customers
+    description: Identity — customer lifecycle
+  - name: Accounts
+    description: Account — multi-currency bank account management
+  - name: Transactions
+    description: Transaction — deposits, withdrawals, transfers (mono and cross-currency)
+  - name: Ledger
+    description: Ledger — double-entry bookkeeping. Chart of accounts and journal entries.
+  - name: FX
+    description: Exchange rates — read-only in MVP
+  - name: Currencies
+    description: Shared — currency catalogue
+  - name: Jurisdictions
+    description: Shared — country and allowed currencies
+
+security:
+  - BearerAuth: []
+
+paths:
+
+  # -----------------------------------------------------------------------
+  # IDENTITY — Customers
+  # -----------------------------------------------------------------------
+
+  /api/v1/customers:
+    post:
+      tags: [Customers]
+      summary: Register a new customer
+      description: "**Roles:** ADMIN, OPERATOR"
+      operationId: registerCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCustomerRequest'
+            example:
+              fullName: "Rafael Mendoza"
+              email: "rafael@kubobank.sv"
+              phoneNumber:
+                countryCode: "+503"
+                number: "70001234"
+      responses:
+        '201':
+          description: Customer registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+    get:
+      tags: [Customers]
+      summary: List all customers
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR"
+      operationId: listCustomers
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/CustomerStatus'
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPageResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/customers/{customerId}:
+    get:
+      tags: [Customers]
+      summary: Get customer by ID
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR"
+      operationId: getCustomerById
+      parameters:
+        - $ref: '#/components/parameters/CustomerIdParam'
+      responses:
+        '200':
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/customers/{customerId}/activate:
+    patch:
+      tags: [Customers]
+      summary: Activate a customer
+      description: "**Roles:** ADMIN, OPERATOR"
+      operationId: activateCustomer
+      parameters:
+        - $ref: '#/components/parameters/CustomerIdParam'
+      responses:
+        '200':
+          description: Customer activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/customers/{customerId}/suspend:
+    patch:
+      tags: [Customers]
+      summary: Suspend a customer
+      description: "**Roles:** ADMIN, OPERATOR"
+      operationId: suspendCustomer
+      parameters:
+        - $ref: '#/components/parameters/CustomerIdParam'
+      responses:
+        '200':
+          description: Customer suspended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  # -----------------------------------------------------------------------
+  # ACCOUNT — Multi-currency Bank Accounts
+  # -----------------------------------------------------------------------
+
+  /api/v1/accounts:
+    post:
+      tags: [Accounts]
+      summary: Open a new bank account
+      description: "**Roles:** ADMIN, OPERATOR"
+      operationId: openAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenAccountRequest'
+            example:
+              customerId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              type: "SAVINGS"
+              jurisdiction: "SV"
+      responses:
+        '201':
+          description: Account opened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+    get:
+      tags: [Accounts]
+      summary: List accounts
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: listAccounts
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: customerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/AccountStatus'
+        - name: jurisdiction
+          in: query
+          schema:
+            type: string
+            example: "SV"
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountPageResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/accounts/{accountId}:
+    get:
+      tags: [Accounts]
+      summary: Get account by ID
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: getAccountById
+      parameters:
+        - $ref: '#/components/parameters/AccountIdParam'
+      responses:
+        '200':
+          description: Account found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/accounts/{accountId}/balances:
+    get:
+      tags: [Accounts]
+      summary: Get all currency balances
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: getAccountBalances
+      parameters:
+        - $ref: '#/components/parameters/AccountIdParam'
+      responses:
+        '200':
+          description: All balances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountBalancesResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/accounts/{accountId}/balances/{currencyCode}:
+    get:
+      tags: [Accounts]
+      summary: Get balance for a specific currency
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: getAccountBalanceByCurrency
+      parameters:
+        - $ref: '#/components/parameters/AccountIdParam'
+        - name: currencyCode
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "BTC"
+      responses:
+        '200':
+          description: Balance found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/accounts/{accountId}/freeze:
+    patch:
+      tags: [Accounts]
+      summary: Freeze an account
+      description: "**Roles:** ADMIN, OPERATOR"
+      operationId: freezeAccount
+      parameters:
+        - $ref: '#/components/parameters/AccountIdParam'
+      responses:
+        '200':
+          description: Account frozen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/accounts/{accountId}/close:
+    patch:
+      tags: [Accounts]
+      summary: Close an account
+      description: "**Roles:** ADMIN, OPERATOR"
+      operationId: closeAccount
+      parameters:
+        - $ref: '#/components/parameters/AccountIdParam'
+      responses:
+        '200':
+          description: Account closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  # -----------------------------------------------------------------------
+  # TRANSACTION
+  # -----------------------------------------------------------------------
+
+  /api/v1/transactions:
+    post:
+      tags: [Transactions]
+      summary: Initiate a transaction
+      description: >
+        **Roles:** ADMIN, OPERATOR, CUSTOMER.
+        On COMPLETED, a JournalEntry is generated automatically.
+        `created_by` is extracted from JWT `sub` automatically.
+      operationId: initiateTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateTransactionRequest'
+            examples:
+              deposit_usd:
+                summary: USD Deposit
+                value:
+                  destinationAccountId: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                  amount: 500.00
+                  currencyCode: "USD"
+                  type: "DEPOSIT"
+                  reference: "DEP-20250101-001"
+              transfer_mono:
+                summary: USD Transfer
+                value:
+                  originAccountId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  destinationAccountId: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                  amount: 100.00
+                  currencyCode: "USD"
+                  type: "TRANSFER"
+                  reference: "TRF-20250101-002"
+              transfer_cross:
+                summary: Cross-currency USD → BTC
+                value:
+                  originAccountId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  destinationAccountId: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                  amount: 200.00
+                  currencyCode: "USD"
+                  targetCurrencyCode: "BTC"
+                  type: "TRANSFER"
+                  reference: "TRF-20250101-003"
+      responses:
+        '202':
+          description: Transaction accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+    get:
+      tags: [Transactions]
+      summary: List transactions
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: listTransactions
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: accountId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/TransactionType'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TransactionStatus'
+        - name: currencyCode
+          in: query
+          schema:
+            type: string
+        - name: createdBy
+          in: query
+          description: Filter by Auth0 sub
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Transaction history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionPageResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/transactions/{transactionId}:
+    get:
+      tags: [Transactions]
+      summary: Get transaction by ID
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: getTransactionById
+      parameters:
+        - $ref: '#/components/parameters/TransactionIdParam'
+      responses:
+        '200':
+          description: Transaction found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/transactions/{transactionId}/reverse:
+    patch:
+      tags: [Transactions]
+      summary: Reverse a completed transaction
+      description: >
+        **Roles:** ADMIN only.
+        Generates a reversal JournalEntry automatically.
+      operationId: reverseTransaction
+      parameters:
+        - $ref: '#/components/parameters/TransactionIdParam'
+      responses:
+        '200':
+          description: Transaction reversed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  # -----------------------------------------------------------------------
+  # LEDGER — Double-Entry Bookkeeping
+  # -----------------------------------------------------------------------
+
+  /api/v1/ledger/chart-of-accounts:
+    get:
+      tags: [Ledger]
+      summary: List chart of accounts
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR"
+      operationId: listChartOfAccounts
+      parameters:
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/AccountCategory'
+        - name: currencyCode
+          in: query
+          schema:
+            type: string
+        - name: active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Chart of accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChartOfAccountResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/ledger/journal-entries:
+    get:
+      tags: [Ledger]
+      summary: List journal entries
+      description: "**Roles:** ADMIN, FINANCE"
+      operationId: listJournalEntries
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: entryType
+          in: query
+          schema:
+            $ref: '#/components/schemas/JournalEntryType'
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Paginated journal entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JournalEntryPageResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    post:
+      tags: [Ledger]
+      summary: Create a manual journal entry (accounting adjustment)
+      description: >
+        **Roles:** ADMIN, FINANCE.
+        DEBIT sum must equal CREDIT sum. Minimum 2 lines required.
+      operationId: createManualJournalEntry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateManualJournalEntryRequest'
+            example:
+              description: "Capital Social inicial"
+              lines:
+                - accountCode: "1100-USD"
+                  side: "DEBIT"
+                  amount: 50000.00
+                  currencyCode: "USD"
+                - accountCode: "3100-USD"
+                  side: "CREDIT"
+                  amount: 50000.00
+                  currencyCode: "USD"
+      responses:
+        '201':
+          description: Manual journal entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JournalEntryResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /api/v1/ledger/journal-entries/{journalEntryId}:
+    get:
+      tags: [Ledger]
+      summary: Get journal entry by ID (with lines)
+      description: "**Roles:** ADMIN, FINANCE"
+      operationId: getJournalEntryById
+      parameters:
+        - name: journalEntryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Journal entry with lines
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JournalEntryResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # -----------------------------------------------------------------------
+  # FX
+  # -----------------------------------------------------------------------
+
+  /api/v1/fx/rates:
+    get:
+      tags: [FX]
+      summary: Get exchange rate between two currencies
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: getExchangeRate
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "USD"
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "BTC"
+      responses:
+        '200':
+          description: Exchange rate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRateResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # -----------------------------------------------------------------------
+  # CURRENCIES
+  # -----------------------------------------------------------------------
+
+  /api/v1/currencies:
+    get:
+      tags: [Currencies]
+      summary: List all currencies
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: listCurrencies
+      parameters:
+        - name: active
+          in: query
+          schema:
+            type: boolean
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/CurrencyType'
+      responses:
+        '200':
+          description: Currencies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CurrencyResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/currencies/{currencyCode}:
+    get:
+      tags: [Currencies]
+      summary: Get currency by code
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: getCurrencyByCode
+      parameters:
+        - name: currencyCode
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "BTC"
+      responses:
+        '200':
+          description: Currency found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrencyResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/currencies/{currencyCode}/deactivate:
+    patch:
+      tags: [Currencies]
+      summary: Deactivate a currency
+      description: >
+        **Roles:** ADMIN only.
+        Affected accounts move to REVIEW status. Transaction history preserved.
+      operationId: deactivateCurrency
+      parameters:
+        - name: currencyCode
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "BTC"
+      responses:
+        '200':
+          description: Currency deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrencyResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  # -----------------------------------------------------------------------
+  # JURISDICTIONS
+  # -----------------------------------------------------------------------
+
+  /api/v1/jurisdictions:
+    get:
+      tags: [Jurisdictions]
+      summary: List all jurisdictions
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: listJurisdictions
+      responses:
+        '200':
+          description: Jurisdictions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JurisdictionResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/jurisdictions/{countryCode}:
+    get:
+      tags: [Jurisdictions]
+      summary: Get jurisdiction by country code
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: getJurisdiction
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "SV"
+      responses:
+        '200':
+          description: Jurisdiction found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JurisdictionResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/jurisdictions/{countryCode}/currencies:
+    get:
+      tags: [Jurisdictions]
+      summary: List allowed currencies for a jurisdiction
+      description: "**Roles:** ADMIN, FINANCE, OPERATOR, CUSTOMER"
+      operationId: getJurisdictionCurrencies
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "SV"
+      responses:
+        '200':
+          description: Allowed currencies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CurrencyResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+# -------------------------------------------------------------------------
+# COMPONENTS
+# -------------------------------------------------------------------------
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT from Auth0 (Authorization Code + PKCE).
+        Roles claim: `https://kubobank.sv/roles`.
+        Valid roles:
+          ROLE_CUSTOMER  — end user, consults own accounts and initiates transactions.
+          ROLE_OPERATOR  — teller, manages customers, accounts and transactions.
+          ROLE_FINANCE   — bookkeeper, reads ledger and creates manual journal entries.
+          ROLE_ADMIN     — system owner, full access including Auth0 user management.
+
+  parameters:
+    CustomerIdParam:
+      name: customerId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    AccountIdParam:
+      name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    TransactionIdParam:
+      name: transactionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 0
+
+    SizeParam:
+      name: size
+      in: query
+      schema:
+        type: integer
+        default: 20
+
+  schemas:
+
+    # --- Shared: Currency ---
+    CurrencyType:
+      type: string
+      enum: [FIAT_LOCAL, FIAT_FOREIGN, CRYPTO]
+
+    CurrencyResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "BTC"
+        type:
+          $ref: '#/components/schemas/CurrencyType'
+        decimals:
+          type: integer
+          example: 8
+        symbol:
+          type: string
+          example: "₿"
+        active:
+          type: boolean
+
+    Money:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+        currency:
+          $ref: '#/components/schemas/CurrencyResponse'
+
+    JurisdictionResponse:
+      type: object
+      properties:
+        countryCode:
+          type: string
+          example: "SV"
+        name:
+          type: string
+          example: "El Salvador"
+        allowedCurrencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/CurrencyResponse'
+
+    # --- FX ---
+    ExchangeRateResponse:
+      type: object
+      properties:
+        from:
+          type: string
+          example: "USD"
+        to:
+          type: string
+          example: "BTC"
+        rate:
+          type: number
+          format: double
+        fetchedAt:
+          type: string
+          format: date-time
+
+    # --- Identity ---
+    PhoneNumberDto:
+      type: object
+      required: [countryCode, number]
+      properties:
+        countryCode:
+          type: string
+          example: "+503"
+        number:
+          type: string
+          example: "70001234"
+
+    CustomerStatus:
+      type: string
+      enum: [PENDING, ACTIVE, SUSPENDED]
+
+    RegisterCustomerRequest:
+      type: object
+      required: [fullName, email, phoneNumber]
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+        phoneNumber:
+          $ref: '#/components/schemas/PhoneNumberDto'
+
+    CustomerResponse:
+      type: object
+      properties:
+        customerId:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        email:
+          type: string
+        phoneNumber:
+          $ref: '#/components/schemas/PhoneNumberDto'
+        status:
+          $ref: '#/components/schemas/CustomerStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CustomerPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    # --- Account ---
+    AccountType:
+      type: string
+      enum: [SAVINGS, CHECKING]
+
+    AccountStatus:
+      type: string
+      enum: [ACTIVE, FROZEN, CLOSED, REVIEW]
+      description: >
+        ACTIVE: operational.
+        FROZEN: no operations allowed.
+        CLOSED: permanently closed.
+        REVIEW: currency deactivated in jurisdiction — customer must convert balance manually.
+
+    OpenAccountRequest:
+      type: object
+      required: [customerId, type, jurisdiction]
+      properties:
+        customerId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/AccountType'
+        jurisdiction:
+          type: string
+          example: "SV"
+          description: ISO 3166-1 alpha-2 country code
+
+    BalanceResponse:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        currency:
+          $ref: '#/components/schemas/CurrencyResponse'
+        amount:
+          type: number
+          format: double
+        asOf:
+          type: string
+          format: date-time
+
+    AccountBalancesResponse:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        balances:
+          type: array
+          items:
+            $ref: '#/components/schemas/BalanceResponse'
+        asOf:
+          type: string
+          format: date-time
+
+    AccountResponse:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        accountNumber:
+          type: string
+        type:
+          $ref: '#/components/schemas/AccountType'
+        jurisdiction:
+          type: string
+          example: "SV"
+        status:
+          $ref: '#/components/schemas/AccountStatus'
+        balances:
+          type: array
+          items:
+            $ref: '#/components/schemas/BalanceResponse'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AccountPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    # --- Transaction ---
+    TransactionType:
+      type: string
+      enum: [DEPOSIT, WITHDRAWAL, TRANSFER]
+
+    TransactionStatus:
+      type: string
+      enum: [PENDING, COMPLETED, FAILED, REVERSED]
+
+    InitiateTransactionRequest:
+      type: object
+      required: [type, amount, currencyCode, reference]
+      properties:
+        originAccountId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Required for WITHDRAWAL and TRANSFER
+        destinationAccountId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Required for DEPOSIT and TRANSFER
+        amount:
+          type: number
+          format: double
+        currencyCode:
+          type: string
+          example: "USD"
+          description: Currency of the origin amount
+        targetCurrencyCode:
+          type: string
+          nullable: true
+          example: "BTC"
+          description: Cross-currency only — triggers automatic FX conversion
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        reference:
+          type: string
+          description: Idempotency key — must be unique per transaction
+        description:
+          type: string
+          nullable: true
+
+    TransactionResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        originAccountId:
+          type: string
+          format: uuid
+          nullable: true
+        destinationAccountId:
+          type: string
+          format: uuid
+          nullable: true
+        amount:
+          $ref: '#/components/schemas/Money'
+        convertedAmount:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          nullable: true
+          description: Only present in cross-currency transactions
+        exchangeRate:
+          allOf:
+            - $ref: '#/components/schemas/ExchangeRateResponse'
+          nullable: true
+          description: Rate snapshot at transaction time — only cross-currency
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        reference:
+          type: string
+        journalEntryId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Linked journal entry. Present when status is COMPLETED or REVERSED.
+        description:
+          type: string
+          nullable: true
+        createdBy:
+          type: string
+          description: Auth0 sub of the operator or customer who initiated the transaction
+          example: "auth0|64f1a2b3c4d5e6f7a8b9c0d1"
+        occurredAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    TransactionPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    # --- Ledger ---
+    AccountCategory:
+      type: string
+      enum: [ASSET, LIABILITY, EQUITY, INCOME, EXPENSE]
+
+    JournalEntryType:
+      type: string
+      enum: [AUTOMATIC, MANUAL]
+      description: >
+        AUTOMATIC: system-generated on TransactionCompleted.
+        MANUAL: created by ROLE_FINANCE or ROLE_ADMIN for accounting adjustments.
+
+    EntrySide:
+      type: string
+      enum: [DEBIT, CREDIT]
+
+    ChartOfAccountResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "2100-USD"
+          description: "Format: {account_number}-{currency_code}"
+        name:
+          type: string
+          example: "Depósitos de Clientes USD"
+        category:
+          $ref: '#/components/schemas/AccountCategory'
+        currencyCode:
+          type: string
+          example: "USD"
+        active:
+          type: boolean
+
+    JournalEntryLineResponse:
+      type: object
+      properties:
+        lineId:
+          type: string
+          format: uuid
+        accountCode:
+          type: string
+          example: "2100-USD"
+        side:
+          $ref: '#/components/schemas/EntrySide'
+        amount:
+          type: number
+          format: double
+        currencyCode:
+          type: string
+        bankAccountId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Customer bank account reference for liability lines (Depósitos de Clientes)
+
+    JournalEntryLineRequest:
+      type: object
+      required: [accountCode, side, amount, currencyCode]
+      properties:
+        accountCode:
+          type: string
+          example: "1100-USD"
+        side:
+          $ref: '#/components/schemas/EntrySide'
+        amount:
+          type: number
+          format: double
+        currencyCode:
+          type: string
+          example: "USD"
+        bankAccountId:
+          type: string
+          format: uuid
+          nullable: true
+
+    JournalEntryResponse:
+      type: object
+      properties:
+        journalEntryId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+          nullable: true
+          description: NULL for manual adjustment entries
+        entryType:
+          $ref: '#/components/schemas/JournalEntryType'
+        description:
+          type: string
+        createdBy:
+          type: string
+          example: "auth0|finance001"
+        occurredAt:
+          type: string
+          format: date-time
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/JournalEntryLineResponse'
+
+    JournalEntryPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/JournalEntryResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    CreateManualJournalEntryRequest:
+      type: object
+      required: [description, lines]
+      properties:
+        description:
+          type: string
+          description: Reason for the accounting adjustment
+        lines:
+          type: array
+          minItems: 2
+          description: >
+            Minimum 2 lines required (at least one DEBIT and one CREDIT).
+            Sum of DEBIT amounts must equal sum of CREDIT amounts.
+          items:
+            $ref: '#/components/schemas/JournalEntryLineRequest'
+
+    # --- Errors ---
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Valid token but insufficient role for this operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: State conflict (e.g. account already closed, currency already inactive)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    UnprocessableEntity:
+      description: >
+        Business rule violation: insufficient funds, currency not allowed in jurisdiction,
+        unbalanced journal entry (DEBIT ≠ CREDIT), cross-currency unsupported for withdrawal.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
