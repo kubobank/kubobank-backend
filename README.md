@@ -1,3 +1,5 @@
+
+
 mkdir -p libs/domains/identity/src/main/kotlin
 touch libs/domains/identity/build.gradle.kts
 
@@ -31,3 +33,11 @@ useJUnitPlatform()
 
 // usar en server
 implementation(project(":libs:shared"))
+
+
+
+The "Ultimate" Productivity Setup Summary:
+Code & Docs: WSL + IntelliJ + .md files + Bruno .bru files (All in Git).
+Daily Tasks: TODO.md in the repo or GitHub Issues.
+Knowledge Base: Obsidian (pointing to your repo's /docs folder).
+Time Tracking: WakaTime (Automated).
