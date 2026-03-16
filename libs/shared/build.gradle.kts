@@ -21,11 +21,11 @@ tasks.test {
 
 dependencies {
     // Database & Persistence
-    implementation("org.springframework.boot:spring-boot-starter-liquibase")
+/*    implementation("org.springframework.boot:spring-boot-starter-liquibase")
     implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1")
     runtimeOnly("org.postgresql:postgresql")
 
     // Testing for DB
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.mybatis.spring.boot:mybatis-spring-boot-starter-test:4.0.1")
+    testImplementation("org.mybatis.spring.boot:mybatis-spring-boot-starter-test:4.0.1")*/
 }
