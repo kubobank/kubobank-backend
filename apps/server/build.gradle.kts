@@ -1,0 +1,52 @@
+plugins {
+	alias(libs.plugins.kotlin.jvm)
+	alias(libs.plugins.kotlin.spring)
+	alias(libs.plugins.spring.boot)
+	alias(libs.plugins.spring.dependency)
+}
+
+group = "sv.com.kubobank"
+version = "0.0.1-SNAPSHOT"
+description = "Demo project for Spring Boot"
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+dependencies {
+/*	implementation("org.springframework.boot:spring-boot-starter-liquibase")
+	//implementation("org.springframework.boot:spring-boot-starter-validation")
+	//implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	//implementation("org.jetbrains.kotlin:kotlin-reflect")
+	//implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1")
+	//implementation("tools.jackson.module:jackson-module-kotlin")
+	//runtimeOnly("org.postgresql:postgresql")
+	//testImplementation("org.springframework.boot:spring-boot-starter-liquibase-test")
+	//testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
+	//testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	//testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+	//testImplementation("org.mybatis.spring.boot:mybatis-spring-boot-starter-test:4.0.1")
+	//testRuntimeOnly("org.junit.platform:junit-platform-launcher")*/
+
+	// This tells Gradle: "Include the code and resources from libs/core"
+	implementation(project(":libs:shared"))
+	//implementation(project(":libs:core")) // This brings in Mybatis/DB logic
+	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
+	implementation("org.jetbrains.kotlin:kotlin-reflect")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+
+kotlin {
+	compilerOptions {
+		freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
+	}
+}
+
+tasks.withType<Test> {
+	useJUnitPlatform()
+}
