@@ -11,6 +11,8 @@
             <option value="$PROJECT_DIR$/apps" />
             <option value="$PROJECT_DIR$/apps/server" />
             <option value="$PROJECT_DIR$/libs" />
+            <option value="$PROJECT_DIR$/libs/domains" />
+            <option value="$PROJECT_DIR$/libs/domains/identity" />
             <option value="$PROJECT_DIR$/libs/shared" />
           </set>
         </option>

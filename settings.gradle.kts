@@ -28,4 +28,5 @@ rootProject.name = "kubobank"
 
 include(":apps:server")    // Your Spring Boot App
 include(":libs:shared") // Your Shared Logic
+include(":libs:domains:identity")
 
