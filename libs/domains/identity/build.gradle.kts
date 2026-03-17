@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
 }
@@ -16,8 +18,19 @@ dependencies {
 
 kotlin {
     jvmToolchain(21)
+
 }
 
 tasks.test {
     useJUnitPlatform()
 }
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+    compilerOptions {
+        // This replaces javaParameters = true
+        javaParameters.set(true)
+        jvmTarget.set(JvmTarget.JVM_21)
+    }
+}
+
+

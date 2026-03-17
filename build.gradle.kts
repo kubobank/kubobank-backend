@@ -5,11 +5,23 @@ plugins {
     alias(libs.plugins.kotlin.spring) apply false
     alias(libs.plugins.spring.boot) apply false
     alias(libs.plugins.spring.dependency) apply false
+    kotlin("plugin.noarg") version "2.0.0" apply false
 }
 
 subprojects {
 
     if (project.path.startsWith(":libs:domains")) {
+        //apply(plugin = "kotlin-noarg")
+        apply(plugin = "org.jetbrains.kotlin.plugin.noarg")
+        configure<org.jetbrains.kotlin.noarg.gradle.NoArgExtension> {
+            annotation("sv.com.kubobank.shared.annotations.NoArg")
+        }
+ /*       noArg {
+            // This will target any class annotated with jMolecules or DDD annotations
+            annotation("org.jmolecules.ddd.annotation.AggregateRoot")
+            annotation("org.jmolecules.ddd.annotation.Entity")
+            // Or create a dummy annotation for your Commands
+        }*/
 
         apply(plugin = "java")
         apply(plugin = "org.jetbrains.kotlin.jvm")
