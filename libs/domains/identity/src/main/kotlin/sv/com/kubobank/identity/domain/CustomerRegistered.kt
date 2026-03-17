@@ -1,6 +1,6 @@
 package sv.com.kubobank.identity.domain
 
-import sv.com.kubobank.domain.DomainEvent
+import sv.com.kubobank.shared.DomainEvent
 import java.time.Instant
 import java.util.UUID
 

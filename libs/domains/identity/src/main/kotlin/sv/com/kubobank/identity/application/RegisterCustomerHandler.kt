@@ -1,6 +1,6 @@
 package sv.com.kubobank.identity.application
 
-import sv.com.kubobank.domain.DomainEventPublisher
+import sv.com.kubobank.shared.DomainEventPublisher
 import sv.com.kubobank.identity.domain.Customer
 import sv.com.kubobank.identity.domain.CustomerRegistered
 import java.util.UUID

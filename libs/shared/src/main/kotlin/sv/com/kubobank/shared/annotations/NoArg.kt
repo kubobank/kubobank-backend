@@ -1,4 +1,4 @@
-package sv.com.kubobank.annotations
+package sv.com.kubobank.shared.annotations
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
