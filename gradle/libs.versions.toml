@@ -6,6 +6,23 @@
 kotlin = "2.2.21"
 springBoot = "4.0.3"
 springDependencyManagement = "1.1.7"
+jmolecules = "2.0.1"
+springModulith = "1.3.1"
+
+[libraries]
+jmolecules-ddd = { group = "org.jmolecules", name = "jmolecules-ddd", version.ref = "jmolecules" }
+jmolecules-events = { group = "org.jmolecules", name = "jmolecules-events", version.ref = "jmolecules" }
+# jmolecules-spring = { group = "org.jmolecules.integrations", name = "jmolecules-spring", version.ref = "jmolecules" }
+# jmolecules-archunit = { group = "org.jmolecules", name = "jmolecules-archunit", version.ref = "jmolecules" }
+# Modulith BOM (To manage all modulith sub-dependencies)
+spring-modulith-bom = { group = "org.springframework.modulith", name = "spring-modulith-bom", version.ref = "springModulith" }
+# Starters
+spring-modulith-starter-core = { group = "org.springframework.modulith", name = "spring-modulith-starter-core" }
+spring-modulith-starter-jdbc = { group = "org.springframework.modulith", name = "spring-modulith-starter-jdbc" }
+spring-modulith-events-jackson = { group = "org.springframework.modulith", name = "spring-modulith-events-jackson" }
+# Test
+spring-modulith-test = { group = "org.springframework.modulith", name = "spring-modulith-test" }
+
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

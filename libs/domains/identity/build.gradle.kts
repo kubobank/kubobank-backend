@@ -7,7 +7,7 @@ version = "0.0.1-SNAPSHOT"
 
 dependencies {
     // If 'identity' needs 'lib-shared'
-    // implementation(project(":libs:domains:lib-shared"))
+    implementation(project(":libs:shared"))
 }
 
 dependencies {

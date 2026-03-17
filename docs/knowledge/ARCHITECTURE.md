@@ -99,26 +99,26 @@ exports.onExecutePostLogin = async (event, api) => {
 
 ### Matriz de Autorización por Endpoint
 
-| Endpoint | ADMIN | FINANCE | OPERATOR | CUSTOMER |
-|---|---|---|---|---|
-| `POST /customers` | ✅ | ❌ | ✅ | ❌ |
-| `GET /customers/**` | ✅ | ✅ | ✅ | ❌ |
-| `PATCH /customers/*/activate` | ✅ | ❌ | ✅ | ❌ |
-| `PATCH /customers/*/suspend` | ✅ | ❌ | ✅ | ❌ |
-| `POST /accounts` | ✅ | ❌ | ✅ | ❌ |
-| `GET /accounts/**` | ✅ | ✅ | ✅ | ✅ |
-| `PATCH /accounts/*/freeze` | ✅ | ❌ | ✅ | ❌ |
-| `PATCH /accounts/*/close` | ✅ | ❌ | ✅ | ❌ |
-| `POST /transactions` | ✅ | ❌ | ✅ | ✅ |
-| `GET /transactions/**` | ✅ | ✅ | ✅ | ✅ |
-| `PATCH /transactions/*/reverse` | ✅ | ❌ | ❌ | ❌ |
-| `GET /fx/rates` | ✅ | ✅ | ✅ | ✅ |
-| `GET /currencies/**` | ✅ | ✅ | ✅ | ✅ |
-| `PATCH /currencies/*/deactivate` | ✅ | ❌ | ❌ | ❌ |
-| `GET /jurisdictions/**` | ✅ | ✅ | ✅ | ✅ |
-| `GET /ledger/journal-entries/**` | ✅ | ✅ | ❌ | ❌ |
-| `POST /ledger/journal-entries` | ✅ | ✅ | ❌ | ❌ |
-| `GET /ledger/chart-of-accounts` | ✅ | ✅ | ✅ | ❌ |
+| Endpoint                         | ADMIN | FINANCE | OPERATOR | CUSTOMER |     |
+| -------------------------------- | ----- | ------- | -------- | -------- | --- |
+| `POST /customers`                | ✅     | ❌       | ✅        | ❌        |     |
+| `GET /customers/**`              | ✅     | ✅       | ✅        | ❌        |     |
+| `PATCH /customers/*/activate`    | ✅     | ❌       | ✅        | ❌        |     |
+| `PATCH /customers/*/suspend`     | ✅     | ❌       | ✅        | ❌        |     |
+| `POST /accounts`                 | ✅     | ❌       | ✅        | ❌        |     |
+| `GET /accounts/**`               | ✅     | ✅       | ✅        | ✅        |     |
+| `PATCH /accounts/*/freeze`       | ✅     | ❌       | ✅        | ❌        |     |
+| `PATCH /accounts/*/close`        | ✅     | ❌       | ✅        | ❌        |     |
+| `POST /transactions`             | ✅     | ❌       | ✅        | ✅        |     |
+| `GET /transactions/**`           | ✅     | ✅       | ✅        | ✅        |     |
+| `PATCH /transactions/*/reverse`  | ✅     | ❌       | ❌        | ❌        |     |
+| `GET /fx/rates`                  | ✅     | ✅       | ✅        | ✅        |     |
+| `GET /currencies/**`             | ✅     | ✅       | ✅        | ✅        |     |
+| `PATCH /currencies/*/deactivate` | ✅     | ❌       | ❌        | ❌        |     |
+| `GET /jurisdictions/**`          | ✅     | ✅       | ✅        | ✅        |     |
+| `GET /ledger/journal-entries/**` | ✅     | ✅       | ❌        | ❌        |     |
+| `POST /ledger/journal-entries`   | ✅     | ✅       | ❌        | ❌        |     |
+| `GET /ledger/chart-of-accounts`  | ✅     | ✅       | ✅        | ❌        |     |
 
 ### Trazabilidad — `created_by`
 Toda operación de escritura registra el `sub` (subject) del JWT como `created_by`. La tabla `transactions` y `journal_entries` incluyen obligatoriamente esta columna.

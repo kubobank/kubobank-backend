@@ -37,8 +37,22 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-
+	implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+	implementation("org.springframework.boot:spring-boot-starter-json") // Usually includes the above
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	// 1. Import the BOM first to align versions
+	implementation(platform(libs.spring.modulith.bom))
+
+	// 2. Add the starters
+	implementation(libs.spring.modulith.starter.core)
+	implementation(libs.spring.modulith.starter.jdbc) // For the Postgres Event Registry
+	implementation(libs.spring.modulith.events.jackson)
+
+	// 3. Testing modularity
+	testImplementation(libs.spring.modulith.test)
+
+	// Your domain projects
+	implementation(project(":libs:domains:identity"))
 }
 
 kotlin {
