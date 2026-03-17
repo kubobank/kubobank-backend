@@ -1,3 +1,13 @@
 spring:
   application:
     name: server
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kubobank_db
+    username: devuser
+    password: devpassword
+    driver-class-name: org.postgresql.Driver
+  modulith:
+    events:
+      jdbc:
+        schema-initialization:
+          enabled: true

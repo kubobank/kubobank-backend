@@ -31,7 +31,7 @@ dependencies {
 	//testRuntimeOnly("org.junit.platform:junit-platform-launcher")*/
 
 	// This tells Gradle: "Include the code and resources from libs/core"
-	implementation(project(":libs:shared"))
+
 	//implementation(project(":libs:core")) // This brings in Mybatis/DB logic
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -50,7 +50,16 @@ dependencies {
 
 	// 3. Testing modularity
 	testImplementation(libs.spring.modulith.test)
+	// 1. Database Core (This fixes your DataSource error)
+	implementation("org.springframework.boot:spring-boot-starter-jdbc")
+	runtimeOnly("org.postgresql:postgresql")
 
+	// 2. MyBatis (Spring Boot Starter)
+	//implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3")
+
+	// 3. Spring Modulith (which needs the DataSource above)
+	//implementation(libs.spring.modulith.starter.jdbc)
+	implementation(project(":libs:shared"))
 	// Your domain projects
 	implementation(project(":libs:domains:identity"))
 }

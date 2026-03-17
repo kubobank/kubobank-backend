@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.spring.dependency) // To use Spring versions
     // DO NOT include the Spring Boot "executable" plugin here.
+    //id("org.jetbrains.kotlin.jvm")
 }
 
 group = "sv.com.kubobank"
@@ -28,4 +29,7 @@ dependencies {
     // Testing for DB
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.mybatis.spring.boot:mybatis-spring-boot-starter-test:4.0.1")*/
+    // This is much cleaner and provides autocomplete
+    implementation(libs.jmolecules.events)
+    implementation(libs.jmolecules.ddd)
 }

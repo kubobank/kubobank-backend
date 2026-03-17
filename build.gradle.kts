@@ -8,6 +8,7 @@ plugins {
 }
 
 subprojects {
+
     if (project.path.startsWith(":libs:domains")) {
 
         apply(plugin = "java")
