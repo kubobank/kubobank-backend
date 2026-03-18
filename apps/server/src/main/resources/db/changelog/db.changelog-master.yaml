@@ -3,4 +3,6 @@ databaseChangeLog:
       file: db/changelog/migrations/001_SPRING_MODULITH_EVENTS.sql
   - include:
       file: db/changelog/migrations/002_DATA_MODEL.sql
+  - include:
+      file: db/changelog/migrations/003_DATA_SEED.sql
 

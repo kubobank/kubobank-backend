@@ -11,7 +11,7 @@ http:
     data: |-
       {
         "fullName": "Irma Quijano",
-        "email": "irma.quijano2@gmail.com",
+        "email": "irma.quijano@gmail.com",
         "phoneNumber": {
           "number": "75830425",
           "countryCode": "+503"
