@@ -2,7 +2,7 @@
 -- KuboBank — Seed Data
 -- Compatible with: PostgreSQL 15+
 -- Managed by: Liquibase
--- Depends on: DATA_MODEL.sql
+-- Depends on: 002_DATA_MODEL.sql
 -- Version: 2.0.0
 -- =============================================================================
 -- ⚠️  FOR DEVELOPMENT / TESTING ONLY — DO NOT RUN IN PRODUCTION

@@ -15,7 +15,7 @@ class RegisterCustomerHandler(
         val customer = Customer(
             fullName = command.fullName,
             email = command.email,
-            phoneNumber = command.phoneNumber.asString()
+            phoneNumber = command.phoneNumber
         )
 
         val savedCustomer = repository.save(customer)

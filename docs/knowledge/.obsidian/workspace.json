@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "ROADMAP.md",
+                "file": "ARCHITECTURE.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ROADMAP"
+              "title": "ARCHITECTURE"
             }
           }
         ]
@@ -185,9 +185,9 @@
   },
   "active": "fa09572f6a75f926",
   "lastOpenFiles": [
-    "ARCHITECTURE.md",
-    "diagrams",
     "BACKEND_DECISIONS.md",
-    "ROADMAP.md"
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "diagrams"
   ]
 }

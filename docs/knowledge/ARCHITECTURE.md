@@ -27,6 +27,7 @@
 - **DDD (Domain-Driven Design)**: El modelo refleja el lenguaje del negocio. Cada Bounded Context es autónomo.
 - **CQRS**: Separación estricta entre operaciones de escritura (Commands) y lectura (Queries).
 - **Event-Driven**: Todo cambio de estado produce un Domain Event. Sin procesos batch.
+- **Idempotency**: This is vital. If a "Deposit" event is sent twice, you don't want to add money to the user's account twice. (Pendiente!)
 - **Outbox Pattern**: Garantía de consistencia entre persistencia y publicación de eventos (via Spring Modulith).
 - **Monolito Modular**: Un solo repositorio con módulos físicamente separados por responsabilidad. Diseñado para escalar a microservicios sin refactoring mayor.
 - **Arquitectura Simétrica**: Cada dominio en el backend (`libs/domains/ledger`) tiene una librería espejo en el frontend (`libs/ledger`).
@@ -364,7 +365,7 @@ kubobank-backend/
 ├── docker-compose.yml
 ├── ARCHITECTURE.md
 ├── BACKEND_DECISIONS.md
-├── DATA_MODEL.sql
+├── 002_DATA_MODEL.sql
 ├── SEED_DATA.sql
 ├── openapi.yml
 │

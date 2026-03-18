@@ -10,7 +10,7 @@ class Customer(
     val customerId: UUID = UUID.randomUUID(),
     val fullName: String,
     val email: String,
-    val phoneNumber: String,
+    val phoneNumber: PhoneNumber,
     val status: CustomerStatus = CustomerStatus.PENDING,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),

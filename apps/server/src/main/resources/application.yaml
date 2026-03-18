@@ -6,8 +6,25 @@ spring:
     username: devuser
     password: devpassword
     driver-class-name: org.postgresql.Driver
+  liquibase:
+    enabled: true  # This is true by default
+    # Default is classpath:/db/changelog/db.changelog-master.yaml
+    change-log: classpath:db/changelog/db.changelog-master.yaml
   modulith:
     events:
       jdbc:
         schema-initialization:
-          enabled: true
+          enabled: false
+mybatis:
+  # Path to your XML mapper files in resources
+  mapper-locations: classpath:mybatis/mappers/**/*.xml
+  # Automatically maps 'full_name' in DB to 'fullName' in Kotlin
+  configuration:
+    map-underscore-to-camel-case: true
+  # Base package for your domain entities
+  type-aliases-package: sv.com.kubobank
+
+logging:
+  level:
+    sv.com.kubobank.identity.infrastructure.persistence.CustomerMapper: DEBUG
+    org.springframework.jdbc.datasource.DataSourceTransactionManager: DEBUG

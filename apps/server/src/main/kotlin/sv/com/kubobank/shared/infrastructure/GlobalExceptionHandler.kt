@@ -6,6 +6,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.http.HttpStatus
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -44,6 +46,26 @@ class GlobalExceptionHandler {
             "status" to 400,
             "error" to "Malformed JSON",
             "message" to "The request body is invalid or empty"
+        ))
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException::class)
+    fun handleDatabaseConflicts(ex: DataIntegrityViolationException): ResponseEntity<Map<String, Any>> {
+        val message = ex.mostSpecificCause.message ?: ""
+
+        // Check if it's the email constraint we defined in SQL
+        if (message.contains("uq_customers_email")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(mapOf(
+                "status" to 409,
+                "error" to "Conflict",
+                "message" to "This email is already registered"
+            ))
+        }
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf(
+            "status" to 500,
+            "error" to "Database Error",
+            "message" to "An unexpected data error occurred"
         ))
     }
 }

@@ -50,7 +50,11 @@ dependencies {
 
 	// 3. Testing modularity
 	testImplementation(libs.spring.modulith.test)
+	implementation("org.springframework.boot:spring-boot-starter-liquibase")
 	// 1. Database Core (This fixes your DataSource error)
+	implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3")
+	// This ensures Instant, LocalDateTime, etc., map correctly to Postgres Timestamps
+	implementation("org.mybatis:mybatis-typehandlers-jsr310:1.0.2")
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 	runtimeOnly("org.postgresql:postgresql")
 
